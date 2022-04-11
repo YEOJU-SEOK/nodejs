@@ -40,30 +40,31 @@ var app = http.createServer(function(request,response){
 
     if(pathname === '/'){
       if(queryData.id === undefined){
-
         fs.readdir('./data', function(error, filelist){
-          
           var title = 'welcome';
           var description = 'Hello Node, Js';
-
           var list = templateList(filelist);
-
           var template = templateHTML(title, list,
              `<h2>${title}</h2>${description}`,
              `<a href="/create">create</a>`);
           response.writeHead(200);
           response.end(template);
         })
-       
-          
       } else {
         fs.readdir('./data', function(error, filelist){
           fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
           var list = templateList(filelist);
           var title = queryData.id;
+          // delete의 경우는 form으로 진행
           var template = templateHTML(title, list,
              `<h2>${title}</h2>${description}`,
-             `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`);
+             `<a href="/create">create</a>
+              <a href="/update?id=${title}">update</a>
+              <form action="delete_process" method="post" onsubmit="dmd">
+                <input type="hidden" name="id" value="${title}">
+                <input type="submit" value="delete">
+              </form>`)
+            ;
           response.writeHead(200);
           response.end(template);
           });
@@ -149,6 +150,20 @@ var app = http.createServer(function(request,response){
         })
 
       
+      })
+    }else if (pathname === '/delete_process'){
+      var body;
+      request.on('data', function(data){
+        body = body + data;
+      })
+      request.on('end', function(){
+        // var post = qs.parse(body);
+        // console.log(post.description);
+        var id = new URLSearchParams(body).get('undefinedid');
+        fs.unlink(`data/${id}`, function(){
+          response.writeHead(302, {Location:`/`});
+          response.end();
+        })
       })
     }else {
       response.writeHead(404);
